@@ -1,0 +1,69 @@
+<configuration>
+	<include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+	<include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+
+	<!-- You can override this to have a custom pattern -->
+	<property name="CONSOLE_LOG_PATTERN"
+			  value="%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(${LOG_LEVEL_PATTERN:-%5p}) %clr(${PID:- }){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n${LOG_EXCEPTION_CONVERSION_WORD:-%wEx}"/>
+	<property name="log.base" value="logs"/>
+	<property scope="context" name="log.base.ctx" value="${log.base}"/>
+
+	<springProperty name="APP_NAME" scope="context" source="spring.application.name"
+					defaultValue="yss-valuation-outsourced"/>
+	<springProperty name="LOG_PATH" scope="context" source="logging.file.path" defaultValue="logs"/>
+	<!--本地开发-->
+	<!--    <springProfile name="default,dev">-->
+	<!--      &lt;!&ndash;应用日志&ndash;&gt;-->
+	<!--      <logger level="DEBUG" name="org.apache.ibatis"/>-->
+	<!--      <logger level="DEBUG" name="com.yss.datamiddle.valuation.infrastracture"/>-->
+
+	<!--      <root level="INFO">-->
+	<!--        <appender-ref ref="CONSOLE"/>-->
+	<!--      </root>-->
+	<!--    </springProfile>-->
+
+
+	<!-- 准生产、定版 -->
+	<springProfile name="prod,dev">
+		<!--应用日志-->
+		<logger level="INFO" name="org.apache.ibatis"/>
+		<logger level="INFO" name="com.yss.datamiddle.sysmanager.repository"/>
+		<!--这个logger没有指定appender，它会继承root节点中定义的那些appender-->
+		<logger level="INFO" name="com.yss.cloud.log"/>
+		<logger level="INFO" name="com.yss.datamiddle.sysmanager.controller"/>
+		<logger level="INFO" name="com.yss.cloud.breaker"/>
+		<logger level="INFO" name="com.yss.cloud.exception"/>
+		<logger level="DEBUG" name="com.yss.cloud.anti.scheduler"/>
+		<logger name="com.yss.datamiddle" level="INFO"/>
+		<logger name="com.mysql" level="INFO"/>
+		<logger name="com.alibaba" level="INFO"/>
+		<logger name="tk.mybatis" level="WARN"/>
+		<logger name="org.apache.commons" level="INFO"/>
+		<logger name="org.apache.xmlbeans" level="INFO"/>
+		<logger name="org.springframework" level="INFO"/>
+		<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+			<encoder>
+				<pattern>%d{yy-MM-dd.HH:mm:ss.SSS} [%-16t] %-5p %-22c{0} - %m%n</pattern>
+			</encoder>
+			<prudent>true</prudent>
+			<!-- 按天来回滚，如果需要按小时来回滚，则设置为{yyyy-MM-dd_HH} -->
+			<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+				<fileNamePattern>${LOG_PATH}/${APP_NAME}_%d{yyyyMMdd}_%i.log</fileNamePattern>
+				<!-- 如果按天来回滚，则最大保存时间为1天，1天之前的都将被清理掉 -->
+				<maxHistory>7</maxHistory>
+				<!-- 按时间回滚的同时，按文件大小来回滚 -->
+				<timeBasedFileNamingAndTriggeringPolicy
+						class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
+					<maxFileSize>100MB</maxFileSize>
+				</timeBasedFileNamingAndTriggeringPolicy>
+			</rollingPolicy>
+		</appender>
+		<root level="INFO">
+			<appender-ref ref="FILE"/>
+			<appender-ref ref="CONSOLE"/>
+		</root>
+
+	</springProfile>
+
+</configuration>

@@ -1,0 +1,20 @@
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${nacosserver:127.0.0.1:8848}
+        namespace: ${namespace:yss-datamiddle-dev}
+        group: ${nacos_group:yss-dm}
+        username: '${spring.cloud.nacos.username}'
+        password: '${spring.cloud.nacos.password}'
+      config:
+        import-check:
+          enabled: false
+        server-addr: ${nacosserver:127.0.0.1:8848}
+        namespace: ${namespace:yss-datamiddle-dev}
+        group: ${nacos_group:yss-dm}
+        file-extension: yml
+        username: '${spring.cloud.nacos.username}'
+        password: '${spring.cloud.nacos.password}'
+      username: ${nacos_username:nacos}
+      password: ${nacos_password:nacos}

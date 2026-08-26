@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.yss.datamiddle.semantic.infrastructure.repository.mapper.TermMapper">
+
+    <!-- 列表筛选公共条件：keyword（名称 / 别名 LIKE）、status、onlyCertified（certified） -->
+    <sql id="termFilter">
+        <where>
+            <if test="keyword != null and keyword != ''">
+                AND (t.name LIKE CONCAT('%', #{keyword}, '%')
+                     OR EXISTS (SELECT 1
+                                  FROM term_alias ta
+                                 WHERE ta.term_id = t.id
+                                   AND ta.alias LIKE CONCAT('%', #{keyword}, '%')))
+            </if>
+            <if test="status != null and status != ''">
+                AND t.status = #{status}
+            </if>
+            <if test="onlyCertified != null and onlyCertified">
+                AND t.status = 'certified'
+            </if>
+        </where>
+    </sql>
+
+    <!-- 分页查询（updated_at DESC 固定排序；0 条以空分页表达） -->
+    <select id="selectTermPage" resultType="com.yss.datamiddle.semantic.infrastructure.repository.po.TermPO">
+        SELECT t.id,
+               t.name,
+               t.definition,
+               t.description,
+               t.owner,
+               t.status,
+               t.certified_by,
+               t.certified_at,
+               t.deprecated_by,
+               t.deprecated_at,
+               t.synonym_set_id,
+               t.version,
+               t.created_by,
+               t.created_at,
+               t.updated_at
+          FROM term t
+        <include refid="termFilter"/>
+        ORDER BY t.updated_at DESC
+        LIMIT #{offset}, #{size}
+    </select>
+
+    <!-- 分页总条数 -->
+    <select id="countTermPage" resultType="long">
+        SELECT COUNT(*)
+          FROM term t
+        <include refid="termFilter"/>
+    </select>
+
+</mapper>

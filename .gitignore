@@ -1,0 +1,16 @@
+# Build artifacts
+target/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+.DS_Store
+
+# Logs
+*.log
+
+# Env / secrets
+.env
+.env.*
+*.pem

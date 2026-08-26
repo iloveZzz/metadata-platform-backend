@@ -1,0 +1,96 @@
+server:
+  port: ${SERVER_PORT:8090}
+
+spring:
+  application:
+    name: metadata-platform
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: false
+
+  datasource:
+    primary:
+      url: ${SPRING_DATASOURCE_PRIMARY_URL:jdbc:mysql://${DB_HOST:localhost}:${DB_PORT:3306}/metadata_platform?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai&createDatabaseIfNotExist=true&allowPublicKeyRetrieval=true&useSSL=false}
+      username: ${DB_USERNAME:root}
+      password: ${DB_PASSWORD:root}
+      driver-class-name: com.mysql.cj.jdbc.Driver
+      hikari:
+        maximum-pool-size: 20
+        minimum-idle: 5
+        connection-timeout: 30000
+        idle-timeout: 600000
+        max-lifetime: 1800000
+  profiles:
+    active:
+      - nacos
+      - dev
+
+mybatis-plus:
+  mapper-locations: classpath*:mapper/*.xml
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: assign_id
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+
+# YSS MyBatis 基线
+yss:
+  mybatis:
+    mapper-scan: com.yss.metadata.repository,com.yss.datamiddle.semantic.infrastructure.repository.mapper,com.yss.datamiddle.dqinsight.repository,com.yss.datamiddle.aicontextlayer.repository,com.yss.datamiddle.smartgovernance.infrastructure.repository.mapper,com.yss.datasecurity.repository.mapper,com.yss.smartdiscovery.infrastructure.persistence
+    mapper-location: classpath*:mapper/*.xml
+    page-helper:
+      enabled: false
+    mybatis-plus-pagination:
+      enabled: true
+  db-scheduler:
+    enabled: ${DB_SCHEDULER_ENABLED:true}
+    polling-interval-ms: ${DB_SCHEDULER_POLLING_INTERVAL_MS:5000}
+    heartbeat-interval-ms: ${DB_SCHEDULER_HEARTBEAT_INTERVAL_MS:10000}
+    threads: ${DB_SCHEDULER_THREADS:10}
+    table-name: ${DB_SCHEDULER_TABLE_NAME:scheduled_tasks}
+    zone-id: ${DB_SCHEDULER_ZONE_ID:Asia/Shanghai}
+
+
+# DQ Insight 配置
+dq:
+  security:
+    channel-auth:
+      enabled: ${CHANNEL_AUTH_ENABLED:true}
+  catalog-api:
+    base-url: ${CATALOG_API_BASE_URL:http://localhost:8080}
+  expiry:
+    scheduler:
+      interval-ms: ${DQ_EXPIRY_SCHEDULER_INTERVAL_MS:3600000}
+  rbac:
+    visible-domains: ${DQ_RBAC_VISIBLE_DOMAINS:}
+    deny-capabilities: ${DQ_RBAC_DENY_CAPABILITIES:}
+
+# AI Context Layer 凭据密钥配置
+acl:
+  security:
+    credential:
+      # 默认 fallback 为本地开发/测试占位密钥（Base64 32字节），生产环境通过 ACL_CREDENTIAL_CIPHER_KEY 覆盖
+      local-cipher-key: ${ACL_CREDENTIAL_CIPHER_KEY:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=}
+
+# DataMiddle 数据源管理 Feign SDK 配置
+datamiddle:
+  ds:
+    feign:
+      service-name: ${DATAMIDDLE_DS_SERVICE_NAME:datamiddle-ds}
+      url: ${DATAMIDDLE_DS_URL:}
+      connect-timeout-millis: ${DATAMIDDLE_DS_CONNECT_TIMEOUT:5000}
+      read-timeout-millis: ${DATAMIDDLE_DS_READ_TIMEOUT:60000}
+      header-propagation-enabled: true
+
+logging:
+  level:
+    com.yss.metadata: DEBUG
+    com.yss.datamiddle: DEBUG
+    org.springframework.jdbc: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"

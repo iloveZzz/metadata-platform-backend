@@ -1,0 +1,11 @@
+          _______  _______
+|\     /|(  ____ \(  ____ \
+( \   / )| (    \/| (    \/
+ \ (_) / | (_____ | (_____
+  \   /  (_____  )(_____  )
+   ) (         ) |      ) |
+   | |   /\____) |/\____) |
+   \_/   \_______)\_______)
+Spring Boot: ${spring-boot.formatted-version}
+Env: ${os.name} ${user.timezone},JDK: ${java.version} ${java.vm.name}
+Main: ${sun.java.command}
