@@ -6,6 +6,7 @@ import com.yss.datasecurity.application.dto.CategoryTreeNodeVO;
 import com.yss.datasecurity.application.service.impl.CategoryTreeAppServiceImpl;
 import com.yss.datasecurity.domain.exception.CategoryDepthExceededException;
 import com.yss.datasecurity.domain.gateway.CategoryTreeGateway;
+import com.yss.datasecurity.domain.gateway.DataCategoryGateway;
 import com.yss.datasecurity.domain.model.CategoryTreeNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,7 +16,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -27,12 +31,16 @@ class CategoryTreeAppServiceTest {
     @Mock
     private CategoryTreeGateway categoryTreeGateway;
 
+    @Mock
+    private DataCategoryGateway dataCategoryGateway;
+
     private CategoryTreeAppService categoryTreeAppService;
 
     @BeforeEach
     void setUp() {
         categoryTreeAppService = new CategoryTreeAppServiceImpl(
             categoryTreeGateway,
+            dataCategoryGateway,
             org.mapstruct.factory.Mappers.getMapper(CategoryTreeConvertor.class)
         );
     }
@@ -51,7 +59,7 @@ class CategoryTreeAppServiceTest {
     }
 
     @Test
-    @DisplayName("测试分类目录树构建 - 正确组装父子层级关系")
+    @DisplayName("测试分类目录树构建 - 正确组装父子层级关系与分类数量汇总")
     void testGetTree_HierarchyAssembly() {
         CategoryTreeNode root = CategoryTreeNode.builder()
             .id(1L)
@@ -67,12 +75,19 @@ class CategoryTreeAppServiceTest {
             .depthLevel(2)
             .build();
 
+        Map<Long, Integer> countMap = new HashMap<>();
+        countMap.put(1L, 2);
+        countMap.put(2L, 5);
+
         when(categoryTreeGateway.listAllNodes()).thenReturn(Arrays.asList(root, child));
+        when(dataCategoryGateway.countCategoriesGroupByTreeNode()).thenReturn(countMap);
 
         List<CategoryTreeNodeVO> tree = categoryTreeAppService.getTree();
         assertEquals(1, tree.size());
         assertEquals("金融数据", tree.get(0).getNodeName());
+        assertEquals(2, tree.get(0).getCategoryCount());
         assertEquals(1, tree.get(0).getChildren().size());
         assertEquals("个人信息", tree.get(0).getChildren().get(0).getNodeName());
+        assertEquals(5, tree.get(0).getChildren().get(0).getCategoryCount());
     }
 }

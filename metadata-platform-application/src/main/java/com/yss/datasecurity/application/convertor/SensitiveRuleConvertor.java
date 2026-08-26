@@ -8,6 +8,7 @@ import com.yss.datasecurity.application.dto.SimulationFieldMatchVO;
 import com.yss.datasecurity.domain.model.SensitiveRule;
 import com.yss.datasecurity.domain.model.SimulationFieldMatch;
 import com.yss.metadata.application.config.MapStructAppConfig;
+import org.mapstruct.IterableMapping;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
@@ -22,6 +23,13 @@ public interface SensitiveRuleConvertor {
 
     @Mapping(target = "featureConfig", source = "featureConfig", qualifiedByName = "jsonToObject")
     SensitiveRuleVO toVO(SensitiveRule domain);
+
+    @Named("toSummaryVO")
+    @Mapping(target = "featureConfig", ignore = true)
+    SensitiveRuleVO toSummaryVO(SensitiveRule domain);
+
+    @IterableMapping(qualifiedByName = "toSummaryVO")
+    List<SensitiveRuleVO> toSummaryVOList(List<SensitiveRule> domainList);
 
     List<SensitiveRuleVO> toVOList(List<SensitiveRule> domainList);
 

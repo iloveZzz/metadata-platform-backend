@@ -193,4 +193,58 @@ class DataCategoryAppServiceTest {
         assertEquals("个人信息", result.get(0).getTreeNodeName());
         assertEquals(5, result.get(0).getActiveFieldsCount());
     }
+
+    @Test
+    @DisplayName("测试创建数据分类 - 支持绑定多条识别特征")
+    void testCreateDataCategory_WithRecognitionFeatures() {
+        List<String> features = Arrays.asList("居民身份证(中国大陆)", "手机号码");
+        DataCategoryCreateDTO dto = DataCategoryCreateDTO.builder()
+            .categoryName("个人基本信息")
+            .categoryCode("CAT_BASIC_INFO")
+            .treeNodeId(10L)
+            .securityGradeId(4L)
+            .priority(1)
+            .recognitionFeatures(features)
+            .description("自然人基本隐私信息")
+            .build();
+
+        when(securityGradeGateway.findById(4L)).thenReturn(Optional.of(SecurityGrade.builder().id(4L).gradeName("L4 重要").sensitivityScore(80).build()));
+        when(categoryTreeGateway.findById(10L)).thenReturn(Optional.of(CategoryTreeNode.builder().id(10L).nodeName("个人信息").build()));
+        when(dataCategoryGateway.save(any(DataCategory.class))).thenAnswer(invocation -> {
+            DataCategory c = invocation.getArgument(0);
+            c.setId(4001L);
+            return c;
+        });
+
+        Long id = dataCategoryAppService.create(dto);
+        assertNotNull(id);
+        assertEquals(4001L, id);
+    }
+
+    @Test
+    @DisplayName("测试创建数据分类 - 支持配置6维自动扫描规则 scanDimensionConfig")
+    void testCreateDataCategory_WithScanDimensionConfig() {
+        String ruleJson = "{\"logic\":\"AND\",\"rules\":[{\"scanType\":\"COLUMN_NAME\",\"matchMode\":\"REGEX_CASE_INSENSITIVE\",\"value\":\".*test.*\"}]}";
+        DataCategoryCreateDTO dto = DataCategoryCreateDTO.builder()
+            .categoryName("测试分类")
+            .categoryCode("CAT_TEST")
+            .treeNodeId(10L)
+            .securityGradeId(3L)
+            .priority(2)
+            .scanDimensionConfig(ruleJson)
+            .description("6维扫描特征规则分类")
+            .build();
+
+        when(securityGradeGateway.findById(3L)).thenReturn(Optional.of(SecurityGrade.builder().id(3L).gradeName("L3 敏感").sensitivityScore(60).build()));
+        when(categoryTreeGateway.findById(10L)).thenReturn(Optional.of(CategoryTreeNode.builder().id(10L).nodeName("个人信息").build()));
+        when(dataCategoryGateway.save(any(DataCategory.class))).thenAnswer(invocation -> {
+            DataCategory c = invocation.getArgument(0);
+            c.setId(5001L);
+            return c;
+        });
+
+        Long id = dataCategoryAppService.create(dto);
+        assertNotNull(id);
+        assertEquals(5001L, id);
+    }
 }

@@ -5,6 +5,7 @@ import com.yss.datasecurity.application.dto.SecurityGradeCreateDTO;
 import com.yss.datasecurity.application.dto.SecurityGradeUpdateDTO;
 import com.yss.datasecurity.application.dto.SecurityGradeVO;
 import com.yss.datasecurity.application.service.SecurityGradeAppService;
+import com.yss.datasecurity.domain.exception.DataSecurityErrorCode;
 import com.yss.datasecurity.domain.exception.DataSecurityException;
 import com.yss.datasecurity.domain.exception.SecurityGradeReferenceConflictException;
 import com.yss.datasecurity.domain.gateway.SecurityGradeGateway;
@@ -31,7 +32,7 @@ public class SecurityGradeAppServiceImpl implements SecurityGradeAppService {
     @Override
     public SecurityGradeVO getDetail(Long id) {
         SecurityGrade grade = securityGradeGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("GRADE_NOT_FOUND", "数据分级不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.GRADE_NOT_FOUND, "数据分级不存在: " + id));
         return convertor.toVO(grade);
     }
 
@@ -39,10 +40,10 @@ public class SecurityGradeAppServiceImpl implements SecurityGradeAppService {
     @Transactional(rollbackFor = Exception.class)
     public Long create(SecurityGradeCreateDTO dto) {
         securityGradeGateway.findByName(dto.getGradeName()).ifPresent(g -> {
-            throw new DataSecurityException("GRADE_NAME_DUPLICATE", "分级名称已存在: " + dto.getGradeName());
+            throw new DataSecurityException(DataSecurityErrorCode.GRADE_NAME_DUPLICATE, "分级名称已存在: " + dto.getGradeName());
         });
         securityGradeGateway.findByCode(dto.getGradeCode()).ifPresent(g -> {
-            throw new DataSecurityException("GRADE_CODE_DUPLICATE", "分级缩写已存在: " + dto.getGradeCode());
+            throw new DataSecurityException(DataSecurityErrorCode.GRADE_CODE_DUPLICATE, "分级缩写已存在: " + dto.getGradeCode());
         });
 
         SecurityGrade domain = convertor.toDomain(dto);
@@ -55,17 +56,17 @@ public class SecurityGradeAppServiceImpl implements SecurityGradeAppService {
     @Transactional(rollbackFor = Exception.class)
     public void update(Long id, SecurityGradeUpdateDTO dto) {
         SecurityGrade grade = securityGradeGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("GRADE_NOT_FOUND", "数据分级不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.GRADE_NOT_FOUND, "数据分级不存在: " + id));
 
         securityGradeGateway.findByName(dto.getGradeName()).ifPresent(g -> {
             if (!g.getId().equals(id)) {
-                throw new DataSecurityException("GRADE_NAME_DUPLICATE", "分级名称已存在: " + dto.getGradeName());
+                throw new DataSecurityException(DataSecurityErrorCode.GRADE_NAME_DUPLICATE, "分级名称已存在: " + dto.getGradeName());
             }
         });
         if (dto.getGradeCode() != null && !dto.getGradeCode().trim().isEmpty()) {
             securityGradeGateway.findByCode(dto.getGradeCode()).ifPresent(g -> {
                 if (!g.getId().equals(id)) {
-                    throw new DataSecurityException("GRADE_CODE_DUPLICATE", "分级缩写已存在: " + dto.getGradeCode());
+                    throw new DataSecurityException(DataSecurityErrorCode.GRADE_CODE_DUPLICATE, "分级缩写已存在: " + dto.getGradeCode());
                 }
             });
         }
@@ -81,7 +82,7 @@ public class SecurityGradeAppServiceImpl implements SecurityGradeAppService {
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         SecurityGrade grade = securityGradeGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("GRADE_NOT_FOUND", "数据分级不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.GRADE_NOT_FOUND, "数据分级不存在: " + id));
 
         int boundCategories = securityGradeGateway.countBoundCategories(id);
         int referencedRules = securityGradeGateway.countReferencedRules(id);

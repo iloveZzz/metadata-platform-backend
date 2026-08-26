@@ -8,6 +8,9 @@ import com.yss.datasecurity.application.dto.MaskingRuleCreateDTO;
 import com.yss.datasecurity.application.dto.MaskingRuleUpdateDTO;
 import com.yss.datasecurity.application.dto.MaskingRuleVO;
 import com.yss.datasecurity.application.service.MaskingRuleAppService;
+import com.yss.datasecurity.domain.constant.DataSecurityConstants;
+import com.yss.datasecurity.domain.enums.CommonStatusEnum;
+import com.yss.datasecurity.domain.exception.DataSecurityErrorCode;
 import com.yss.datasecurity.domain.exception.DataSecurityException;
 import com.yss.datasecurity.domain.gateway.MaskingRuleGateway;
 import com.yss.datasecurity.domain.model.MaskingRule;
@@ -44,10 +47,10 @@ public class MaskingRuleAppServiceImpl implements MaskingRuleAppService {
     public Long createRule(MaskingRuleCreateDTO dto) {
         MaskingRule domain = convertor.toDomain(dto);
         if (domain.getStatus() == null || domain.getStatus().isEmpty()) {
-            domain.setStatus("ENABLED");
+            domain.setStatus(CommonStatusEnum.ENABLED.getCode());
         }
         if (domain.getOwner() == null || domain.getOwner().isEmpty()) {
-            domain.setOwner("安全管理员");
+            domain.setOwner(DataSecurityConstants.DEFAULT_SECURITY_ADMIN);
         }
         MaskingRule saved = maskingRuleGateway.save(domain);
         return saved.getId();
@@ -57,7 +60,7 @@ public class MaskingRuleAppServiceImpl implements MaskingRuleAppService {
     @Transactional(rollbackFor = Exception.class)
     public void updateRule(Long id, MaskingRuleUpdateDTO dto) {
         MaskingRule existing = maskingRuleGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("RULE_NOT_FOUND", "脱敏规则不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RULE_NOT_FOUND, "脱敏规则不存在: " + id));
 
         MaskingRule domain = convertor.toDomain(dto);
         domain.setId(id);
@@ -77,7 +80,7 @@ public class MaskingRuleAppServiceImpl implements MaskingRuleAppService {
     @Transactional(rollbackFor = Exception.class)
     public void deleteRule(Long id) {
         maskingRuleGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("RULE_NOT_FOUND", "脱敏规则不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RULE_NOT_FOUND, "脱敏规则不存在: " + id));
         maskingRuleGateway.deleteById(id);
     }
 
@@ -85,7 +88,7 @@ public class MaskingRuleAppServiceImpl implements MaskingRuleAppService {
     @Transactional(rollbackFor = Exception.class)
     public void updateStatus(Long id, String status) {
         MaskingRule existing = maskingRuleGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("RULE_NOT_FOUND", "脱敏规则不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RULE_NOT_FOUND, "脱敏规则不存在: " + id));
         existing.setStatus(status);
         maskingRuleGateway.update(existing);
     }

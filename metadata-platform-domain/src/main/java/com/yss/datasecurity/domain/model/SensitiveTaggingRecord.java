@@ -1,5 +1,8 @@
 package com.yss.datasecurity.domain.model;
 
+import com.yss.datasecurity.domain.enums.CommonStatusEnum;
+import com.yss.datasecurity.domain.enums.RecognitionMethodEnum;
+import com.yss.datasecurity.domain.enums.RecognitionSourceTypeEnum;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -51,8 +54,8 @@ public class SensitiveTaggingRecord {
         this.securityGradeId = newGradeId;
         this.securityGradeName = newGradeName;
         this.sensitivityScore = newScore;
-        this.sourceType = "MANUAL_LOCKED";
-        this.recognitionMethod = "MANUAL";
+        this.sourceType = RecognitionSourceTypeEnum.MANUAL_LOCKED.getCode();
+        this.recognitionMethod = RecognitionMethodEnum.MANUAL.getCode();
         this.isLocked = permanentLock;
         this.lockUser = operator;
         this.lockTime = LocalDateTime.now();
@@ -63,7 +66,7 @@ public class SensitiveTaggingRecord {
     }
 
     public void toggleMaskingStatus(boolean enabled) {
-        this.maskingStatus = enabled ? "ENABLED" : "DISABLED";
+        this.maskingStatus = enabled ? CommonStatusEnum.ENABLED.getCode() : CommonStatusEnum.DISABLED.getCode();
         this.maskingStatusUpdatedAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
@@ -72,7 +75,7 @@ public class SensitiveTaggingRecord {
         this.isLocked = true;
         this.lockUser = operator;
         this.lockTime = LocalDateTime.now();
-        this.recognitionMethod = "MANUAL";
+        this.recognitionMethod = RecognitionMethodEnum.MANUAL.getCode();
         this.updatedAt = LocalDateTime.now();
     }
 
@@ -90,7 +93,7 @@ public class SensitiveTaggingRecord {
             this.securityGradeId = targetGradeId;
             this.securityGradeName = targetGradeName;
         }
-        this.recognitionMethod = "MANUAL";
+        this.recognitionMethod = RecognitionMethodEnum.MANUAL.getCode();
         this.hasBetterRecommendation = false;
         this.recommendedCategoryId = null;
         this.recommendedCategoryName = null;

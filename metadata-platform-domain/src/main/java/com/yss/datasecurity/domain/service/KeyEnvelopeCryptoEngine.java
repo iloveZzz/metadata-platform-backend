@@ -1,5 +1,7 @@
 package com.yss.datasecurity.domain.service;
 
+import com.yss.datasecurity.domain.enums.CryptoAlgorithmEnum;
+import com.yss.datasecurity.domain.enums.KeyTypeEnum;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -20,10 +22,10 @@ public class KeyEnvelopeCryptoEngine {
 
     public GeneratedKeyPair generateKey(String keyType, String algorithm, Integer keyLength) {
         SecureRandom random = new SecureRandom();
-        String upperType = keyType != null ? keyType.toUpperCase() : "HASH";
+        String upperType = keyType != null ? keyType.toUpperCase() : KeyTypeEnum.HASH.getCode();
         String upperAlgo = algorithm != null ? algorithm.toUpperCase() : "-";
 
-        if ("HASH".equals(upperType) || "HASH_SALT".equals(upperType)) {
+        if (KeyTypeEnum.HASH.getCode().equals(upperType) || KeyTypeEnum.HASH_SALT.getCode().equals(upperType)) {
             byte[] salt = new byte[16];
             random.nextBytes(salt);
             String saltHex = bytesToHex(salt);
@@ -31,7 +33,7 @@ public class KeyEnvelopeCryptoEngine {
         }
 
         // 非对称加密：RSA 或 SM2
-        if ("RSA".equals(upperAlgo) || "PSA".equals(upperAlgo) || "ASYMMETRIC".equals(upperType) && !"SM2".equals(upperAlgo)) {
+        if (CryptoAlgorithmEnum.RSA.getCode().equals(upperAlgo) || "PSA".equals(upperAlgo) || (KeyTypeEnum.ASYMMETRIC.getCode().equals(upperType) && !CryptoAlgorithmEnum.SM2.getCode().equals(upperAlgo))) {
             int keySize = (keyLength != null && keyLength > 0) ? keyLength : 2048;
             try {
                 KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA");
@@ -47,7 +49,7 @@ public class KeyEnvelopeCryptoEngine {
             }
         }
 
-        if ("SM2".equals(upperAlgo)) {
+        if (CryptoAlgorithmEnum.SM2.getCode().equals(upperAlgo)) {
             byte[] pri = new byte[32];
             byte[] pub = new byte[65];
             pub[0] = 0x04; // uncompressed format
@@ -61,13 +63,13 @@ public class KeyEnvelopeCryptoEngine {
 
         // 对称加密：AES, DES, 3DES, SM4, FF1
         int byteLen = 16;
-        if ("DES".equals(upperAlgo)) {
+        if (CryptoAlgorithmEnum.DES.getCode().equals(upperAlgo)) {
             byteLen = 8; // 64位
-        } else if ("3DES".equals(upperAlgo)) {
+        } else if (CryptoAlgorithmEnum.DES3.getCode().equals(upperAlgo) || "3DES".equals(upperAlgo)) {
             byteLen = (keyLength != null && keyLength == 112) ? 14 : 24; // 112位或168位
-        } else if ("SM4".equals(upperAlgo)) {
+        } else if (CryptoAlgorithmEnum.SM4.getCode().equals(upperAlgo)) {
             byteLen = 16; // 128位
-        } else if ("AES".equals(upperAlgo) || "FF1".equals(upperAlgo) || "FPE".equals(upperAlgo)) {
+        } else if (CryptoAlgorithmEnum.AES.getCode().equals(upperAlgo) || CryptoAlgorithmEnum.FF1.getCode().equals(upperAlgo) || CryptoAlgorithmEnum.FPE.getCode().equals(upperAlgo)) {
             if (keyLength != null) {
                 if (keyLength == 192) byteLen = 24;
                 else if (keyLength == 256) byteLen = 32;

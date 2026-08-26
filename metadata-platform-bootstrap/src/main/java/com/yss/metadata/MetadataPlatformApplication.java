@@ -23,7 +23,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
         basePackages = {
                 "com.yss.metadata.repository",
                 "com.yss.datamiddle.semantic.infrastructure.repository.mapper",
-                "com.yss.datamiddle.dqinsight.repository",
                 "com.yss.datamiddle.aicontextlayer.repository",
                 "com.yss.datamiddle.smartgovernance.infrastructure.repository.mapper",
                 "com.yss.datasecurity.infrastructure.repository.mapper",

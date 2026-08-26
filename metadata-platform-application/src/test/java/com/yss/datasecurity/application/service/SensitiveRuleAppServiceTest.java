@@ -23,6 +23,7 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -44,6 +45,58 @@ class SensitiveRuleAppServiceTest {
             new SensitiveRecognitionSimulationEngine(),
             org.mapstruct.factory.Mappers.getMapper(SensitiveRuleConvertor.class)
         );
+    }
+
+    @Test
+    @DisplayName("测试分页查询敏感识别特征列表 - 仅返回列表概览数据，排除 featureConfig 详情配置")
+    void testPageRules_SummaryExcludesFeatureConfig() {
+        SensitiveRule rule = SensitiveRule.builder()
+            .id(1011L)
+            .ruleName("居民身份证(中国大陆)")
+            .ruleType("BUILTIN")
+            .description("中国大陆18位第二代居民身份证号码识别")
+            .priority(5)
+            .owner("system")
+            .status("ENABLED")
+            .categoryScopeMode("ALL")
+            .scanScopeType("DATASOURCE")
+            .featureConfig("{\"id\":\"root_1011\",\"type\":\"GROUP\",\"logicalOp\":\"AND\",\"children\":[{\"id\":\"leaf_1011_1\",\"type\":\"LEAF\",\"field\":\"CONTENT\",\"operator\":\"REGEX_EXACT\",\"value\":\"^[1-9]\\\\d{5}(18|19|20)\\\\d{2}((0[1-9])|(1[0-2]))(([0-2][1-9])|10|20|30|31)\\\\d{3}[0-9Xx]$\"}]}")
+            .taggedFieldsCount(10)
+            .build();
+
+        when(sensitiveRuleGateway.pageRules(1, 20, null, "ENABLED", null, null))
+            .thenReturn(Collections.singletonList(rule));
+        when(sensitiveRuleGateway.countRules(null, "ENABLED", null, null)).thenReturn(1L);
+
+        com.yss.cloud.dto.result.PageResult<com.yss.datasecurity.application.dto.SensitiveRuleVO> result =
+            sensitiveRuleAppService.pageRules(1, 20, null, "ENABLED", null, null);
+
+        assertNotNull(result);
+        assertEquals(1, result.getData().size());
+        com.yss.datasecurity.application.dto.SensitiveRuleVO vo = result.getData().get(0);
+        assertEquals(1011L, vo.getId());
+        assertEquals("居民身份证(中国大陆)", vo.getRuleName());
+        assertEquals("BUILTIN", vo.getRuleType());
+        // 关键断言：列表接口必须不返回 featureConfig 详情数据
+        assertNull(vo.getFeatureConfig(), "列表接口返回的 featureConfig 必须为 null（不返回详情数据）");
+    }
+
+    @Test
+    @DisplayName("测试查询敏感识别特征详情 - 返回包含 featureConfig 详情数据")
+    void testGetDetail_IncludesFeatureConfig() {
+        SensitiveRule rule = SensitiveRule.builder()
+            .id(1011L)
+            .ruleName("居民身份证(中国大陆)")
+            .ruleType("BUILTIN")
+            .featureConfig("{\"id\":\"root_1011\",\"type\":\"GROUP\"}")
+            .build();
+
+        when(sensitiveRuleGateway.findById(1011L)).thenReturn(Optional.of(rule));
+
+        com.yss.datasecurity.application.dto.SensitiveRuleVO vo = sensitiveRuleAppService.getDetail(1011L);
+        assertNotNull(vo);
+        assertEquals(1011L, vo.getId());
+        assertNotNull(vo.getFeatureConfig(), "详情接口返回的 featureConfig 必须包含详情配置");
     }
 
     @Test

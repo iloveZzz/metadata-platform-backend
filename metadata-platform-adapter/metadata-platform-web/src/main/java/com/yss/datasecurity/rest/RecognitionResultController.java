@@ -4,6 +4,7 @@ import com.yss.cloud.dto.result.PageResult;
 import com.yss.cloud.dto.result.Result;
 import com.yss.cloud.dto.result.SingleResult;
 import com.yss.datasecurity.application.dto.RecognitionBatchLogVO;
+import com.yss.datasecurity.application.dto.RecognitionResultBatchDeleteDTO;
 import com.yss.datasecurity.application.dto.RecognitionResultDetailVO;
 import com.yss.datasecurity.application.dto.RecognitionResultEditDTO;
 import com.yss.datasecurity.application.dto.RecognitionResultImportPreviewVO;
@@ -117,8 +118,20 @@ public class RecognitionResultController {
 
     @ApiOperation("批量删除识别结果")
     @DeleteMapping("/batch")
-    public SingleResult<Boolean> batchDeleteResults(@RequestParam("ids") List<Long> ids) {
-        recognitionResultAppService.batchDeleteResults(ids);
+    public SingleResult<Boolean> batchDeleteResults(
+            @RequestBody(required = false) RecognitionResultBatchDeleteDTO dto,
+            @RequestParam(name = "ids", required = false) List<Long> paramIds
+    ) {
+        List<Long> targetIds = null;
+        if (dto != null && dto.getIds() != null && !dto.getIds().isEmpty()) {
+            targetIds = dto.getIds();
+        } else if (paramIds != null && !paramIds.isEmpty()) {
+            targetIds = paramIds;
+        }
+        if (targetIds == null || targetIds.isEmpty()) {
+            throw new IllegalArgumentException("识别结果ID列表不能为空");
+        }
+        recognitionResultAppService.batchDeleteResults(targetIds);
         return SingleResult.of(true);
     }
 

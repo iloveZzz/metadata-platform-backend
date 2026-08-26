@@ -142,6 +142,16 @@ public class SensitiveTaggingRecordGatewayImpl implements SensitiveTaggingRecord
         }
     }
 
+    @Override
+    public long countByMatchedRuleId(Long matchedRuleId) {
+        if (matchedRuleId == null) return 0L;
+        Long count = repository.selectCount(
+            new LambdaQueryWrapper<SensitiveTaggingRecordPO>()
+                .eq(SensitiveTaggingRecordPO::getMatchedRuleId, matchedRuleId)
+        );
+        return count == null ? 0L : count;
+    }
+
     private LambdaQueryWrapper<SensitiveTaggingRecordPO> buildQuery(String keyword, Long categoryId, Long gradeId, Boolean isLocked, String datasourceId) {
         LambdaQueryWrapper<SensitiveTaggingRecordPO> query = new LambdaQueryWrapper<>();
         if (keyword != null && !keyword.trim().isEmpty()) {

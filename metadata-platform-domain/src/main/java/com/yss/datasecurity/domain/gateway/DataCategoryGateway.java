@@ -3,6 +3,7 @@ package com.yss.datasecurity.domain.gateway;
 import com.yss.datasecurity.domain.model.DataCategory;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface DataCategoryGateway {
@@ -19,4 +20,5 @@ public interface DataCategoryGateway {
     void batchUpdateGrade(List<Long> categoryIds, Long securityGradeId);
     void batchUpdateStatus(List<Long> categoryIds, String status, String disablePolicy);
     void batchDelete(List<Long> categoryIds);
+    Map<Long, Integer> countCategoriesGroupByTreeNode();
 }

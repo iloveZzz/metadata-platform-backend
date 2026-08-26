@@ -27,5 +27,7 @@ public class CategoryTreeNodeVO implements Serializable {
     private List<String> admins = new ArrayList<>();
     private String description;
     @Builder.Default
+    private Integer categoryCount = 0;
+    @Builder.Default
     private List<CategoryTreeNodeVO> children = new ArrayList<>();
 }

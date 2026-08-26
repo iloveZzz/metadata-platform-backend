@@ -78,6 +78,9 @@ public class SensitiveTaggingRecordPO implements Serializable {
     @TableField("sample_data")
     private String sampleData;
 
+    @TableField("sample_preview")
+    private String samplePreview;
+
     @TableField("confidence_score")
     private Double confidenceScore;
 

@@ -12,6 +12,7 @@ import com.yss.datasecurity.application.dto.DataCategoryCreateDTO;
 import com.yss.datasecurity.application.dto.DataCategoryUpdateDTO;
 import com.yss.datasecurity.application.dto.DataCategoryVO;
 import com.yss.datasecurity.application.service.DataCategoryAppService;
+import com.yss.datasecurity.domain.exception.DataSecurityErrorCode;
 import com.yss.datasecurity.domain.exception.DataSecurityException;
 import com.yss.datasecurity.domain.gateway.CategoryTreeGateway;
 import com.yss.datasecurity.domain.gateway.DataCategoryGateway;
@@ -58,7 +59,7 @@ public class DataCategoryAppServiceImpl implements DataCategoryAppService {
     @Override
     public DataCategoryVO getDetail(Long id) {
         DataCategory category = dataCategoryGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("CATEGORY_NOT_FOUND", "数据分类不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.CATEGORY_NOT_FOUND, "数据分类不存在: " + id));
         DataCategoryVO vo = convertor.toVO(category);
         enrichVO(vo);
         return vo;
@@ -68,9 +69,9 @@ public class DataCategoryAppServiceImpl implements DataCategoryAppService {
     @Transactional(rollbackFor = Exception.class)
     public Long create(DataCategoryCreateDTO dto) {
         SecurityGrade grade = securityGradeGateway.findById(dto.getSecurityGradeId())
-            .orElseThrow(() -> new DataSecurityException("GRADE_NOT_FOUND", "关联数据分级不存在: " + dto.getSecurityGradeId()));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.GRADE_NOT_FOUND, "关联数据分级不存在: " + dto.getSecurityGradeId()));
         CategoryTreeNode treeNode = categoryTreeGateway.findById(dto.getTreeNodeId())
-            .orElseThrow(() -> new DataSecurityException("NODE_NOT_FOUND", "关联目录节点不存在: " + dto.getTreeNodeId()));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.NODE_NOT_FOUND, "关联目录节点不存在: " + dto.getTreeNodeId()));
 
         DataCategory domain = convertor.toDomain(dto);
         if (domain.getCategoryCode() == null || domain.getCategoryCode().trim().isEmpty()) {
@@ -88,12 +89,12 @@ public class DataCategoryAppServiceImpl implements DataCategoryAppService {
     @Transactional(rollbackFor = Exception.class)
     public void update(Long id, DataCategoryUpdateDTO dto) {
         DataCategory category = dataCategoryGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("CATEGORY_NOT_FOUND", "数据分类不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.CATEGORY_NOT_FOUND, "数据分类不存在: " + id));
 
         SecurityGrade grade = securityGradeGateway.findById(dto.getSecurityGradeId())
-            .orElseThrow(() -> new DataSecurityException("GRADE_NOT_FOUND", "关联数据分级不存在: " + dto.getSecurityGradeId()));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.GRADE_NOT_FOUND, "关联数据分级不存在: " + dto.getSecurityGradeId()));
         CategoryTreeNode treeNode = categoryTreeGateway.findById(dto.getTreeNodeId())
-            .orElseThrow(() -> new DataSecurityException("NODE_NOT_FOUND", "关联目录节点不存在: " + dto.getTreeNodeId()));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.NODE_NOT_FOUND, "关联目录节点不存在: " + dto.getTreeNodeId()));
 
         convertor.updateDomainFromDTO(dto, category);
         if (category.getCategoryCode() == null || category.getCategoryCode().trim().isEmpty()) {
@@ -110,7 +111,7 @@ public class DataCategoryAppServiceImpl implements DataCategoryAppService {
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         dataCategoryGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("CATEGORY_NOT_FOUND", "数据分类不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.CATEGORY_NOT_FOUND, "数据分类不存在: " + id));
         dataCategoryGateway.deleteById(id);
     }
 
@@ -118,7 +119,7 @@ public class DataCategoryAppServiceImpl implements DataCategoryAppService {
     @Transactional(rollbackFor = Exception.class)
     public void changeStatus(Long id, CategoryStatusChangeDTO dto) {
         dataCategoryGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("CATEGORY_NOT_FOUND", "数据分类不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.CATEGORY_NOT_FOUND, "数据分类不存在: " + id));
         dataCategoryGateway.updateStatus(id, dto.getStatus(), dto.getDisablePolicy());
     }
 
@@ -126,7 +127,7 @@ public class DataCategoryAppServiceImpl implements DataCategoryAppService {
     @Transactional(rollbackFor = Exception.class)
     public void batchMove(CategoryBatchMoveDTO dto) {
         CategoryTreeNode target = categoryTreeGateway.findById(dto.getTargetTreeNodeId())
-            .orElseThrow(() -> new DataSecurityException("NODE_NOT_FOUND", "目标目录节点不存在: " + dto.getTargetTreeNodeId()));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.NODE_NOT_FOUND, "目标目录节点不存在: " + dto.getTargetTreeNodeId()));
         dataCategoryGateway.batchMove(dto.getCategoryIds(), target.getId());
     }
 
@@ -134,7 +135,7 @@ public class DataCategoryAppServiceImpl implements DataCategoryAppService {
     @Transactional(rollbackFor = Exception.class)
     public void batchUpdateGrade(CategoryBatchGradeDTO dto) {
         SecurityGrade grade = securityGradeGateway.findById(dto.getSecurityGradeId())
-            .orElseThrow(() -> new DataSecurityException("GRADE_NOT_FOUND", "目标数据分级不存在: " + dto.getSecurityGradeId()));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.GRADE_NOT_FOUND, "目标数据分级不存在: " + dto.getSecurityGradeId()));
         dataCategoryGateway.batchUpdateGrade(dto.getCategoryIds(), grade.getId());
     }
 
@@ -153,7 +154,7 @@ public class DataCategoryAppServiceImpl implements DataCategoryAppService {
     @Override
     public List<CategoryActiveFieldVO> getActiveFields(Long categoryId) {
         DataCategory category = dataCategoryGateway.findById(categoryId)
-            .orElseThrow(() -> new DataSecurityException("CATEGORY_NOT_FOUND", "数据分类不存在: " + categoryId));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.CATEGORY_NOT_FOUND, "数据分类不存在: " + categoryId));
 
         List<SensitiveTaggingRecord> records = sensitiveTaggingRecordGateway.listByCategoryId(categoryId);
         if (records == null || records.isEmpty()) {

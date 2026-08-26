@@ -21,4 +21,5 @@ public interface SensitiveTaggingRecordGateway {
     void deleteBatchIds(List<Long> ids);
     void saveBatch(List<SensitiveTaggingRecord> records);
     void updateBatch(List<SensitiveTaggingRecord> records);
+    long countByMatchedRuleId(Long matchedRuleId);
 }

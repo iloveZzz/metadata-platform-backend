@@ -39,7 +39,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * 字段级血缘引擎、爆炸半径 BFS 算法与 MCP 工具集成端到端 (E2E) 测试。
  */
 @SpringBootTest(classes = MetadataPlatformApplication.class, properties = {
-        "spring.datasource.primary.url=jdbc:h2:mem:column_lineage_e2e;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+        "spring.datasource.primary.url=jdbc:h2:mem:column_lineage_e2e;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE;INIT=RUNSCRIPT FROM 'classpath:schema-h2.sql'",
         "spring.datasource.primary.driver-class-name=org.h2.Driver",
         "spring.datasource.primary.username=sa",
         "spring.datasource.primary.password=",

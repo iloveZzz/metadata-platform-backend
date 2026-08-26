@@ -30,7 +30,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * 验证 CollectorController 与 ConnectorController 的 list() 方法及 /api/connectors 端点在真实 Spring 上下文中正常装配与路由。
  */
 @SpringBootTest(classes = MetadataPlatformApplication.class, properties = {
-        "spring.datasource.primary.url=jdbc:h2:mem:collector_connector_test;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE",
+        "spring.datasource.primary.url=jdbc:h2:mem:collector_connector_test;MODE=MySQL;DB_CLOSE_DELAY=-1;DATABASE_TO_LOWER=TRUE;INIT=RUNSCRIPT FROM 'classpath:schema-h2.sql'",
         "spring.datasource.primary.driver-class-name=org.h2.Driver",
         "spring.datasource.primary.username=sa",
         "spring.datasource.primary.password=",

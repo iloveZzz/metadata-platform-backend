@@ -8,6 +8,16 @@ public class DataSecurityException extends RuntimeException {
         this.code = code;
     }
 
+    public DataSecurityException(DataSecurityErrorCode errorCode) {
+        super(errorCode.getDefaultMessage());
+        this.code = errorCode.getCode();
+    }
+
+    public DataSecurityException(DataSecurityErrorCode errorCode, String message) {
+        super(message != null ? message : errorCode.getDefaultMessage());
+        this.code = errorCode.getCode();
+    }
+
     public String getCode() {
         return code;
     }

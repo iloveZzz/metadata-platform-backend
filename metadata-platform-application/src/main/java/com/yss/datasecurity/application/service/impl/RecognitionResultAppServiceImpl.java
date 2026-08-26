@@ -9,6 +9,14 @@ import com.yss.datasecurity.application.dto.RecognitionResultManualAddDTO;
 import com.yss.datasecurity.application.dto.RecognitionResultPageQueryDTO;
 import com.yss.datasecurity.application.dto.RecognitionResultVO;
 import com.yss.datasecurity.application.service.RecognitionResultAppService;
+import com.yss.datasecurity.domain.constant.DataSecurityConstants;
+import com.yss.datasecurity.domain.constant.RecognitionRuleConstants;
+import com.yss.datasecurity.domain.enums.CommonStatusEnum;
+import com.yss.datasecurity.domain.enums.DedupConflictStrategyEnum;
+import com.yss.datasecurity.domain.enums.RecognitionMethodEnum;
+import com.yss.datasecurity.domain.enums.RecognitionSourceTypeEnum;
+import com.yss.datasecurity.domain.enums.RecognitionStatusEnum;
+import com.yss.datasecurity.domain.exception.DataSecurityErrorCode;
 import com.yss.datasecurity.domain.exception.DataSecurityException;
 import com.yss.datasecurity.domain.gateway.DataCategoryGateway;
 import com.yss.datasecurity.domain.gateway.SecurityGradeGateway;
@@ -42,28 +50,28 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                     .id(8001L)
                     .batchType("IMPORT")
                     .fileName("dataphin_sensitive_tagging_v1.xlsx")
-                    .assetType("DATAPHIN")
+                    .assetType(DataSecurityConstants.ASSET_SOURCE_DATAPHIN)
                     .totalCount(120)
                     .successCount(120)
                     .failedCount(0)
-                    .conflictStrategy("OVERWRITE_ALL")
+                    .conflictStrategy(DedupConflictStrategyEnum.OVERWRITE_ALL.getCode())
                     .maskingPolicy("UNIFIED_ENABLED")
                     .status("SUCCESS")
-                    .operator("admin")
+                    .operator(DataSecurityConstants.DEFAULT_OPERATOR)
                     .createdAt(LocalDateTime.of(2025, 3, 16, 10, 0, 0))
                     .build(),
             RecognitionBatchLogVO.builder()
                     .id(8002L)
                     .batchType("MANUAL_ADD")
                     .fileName("按表批量添加 (8张表/26个字段)")
-                    .assetType("DATAPHIN")
+                    .assetType(DataSecurityConstants.ASSET_SOURCE_DATAPHIN)
                     .totalCount(26)
                     .successCount(26)
                     .failedCount(0)
-                    .conflictStrategy("OVERWRITE_UNLOCKED")
+                    .conflictStrategy(DedupConflictStrategyEnum.OVERWRITE_UNLOCKED.getCode())
                     .maskingPolicy("RETAIN_CONFIG")
                     .status("SUCCESS")
-                    .operator("admin")
+                    .operator(DataSecurityConstants.DEFAULT_OPERATOR)
                     .createdAt(LocalDateTime.of(2025, 3, 17, 11, 20, 0))
                     .build()
     ));
@@ -109,7 +117,7 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
     @Override
     public RecognitionResultDetailVO getRecognitionResultDetail(Long id) {
         SensitiveTaggingRecord record = recordGateway.findById(id)
-                .orElseThrow(() -> new DataSecurityException("RESULT_NOT_FOUND", "识别结果记录不存在: " + id));
+                .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RESULT_NOT_FOUND, "识别结果记录不存在: " + id));
 
         // 构造候选识别记录池
         List<RecognitionResultDetailVO.RecognitionRecordItemVO> candidates = new ArrayList<>();
@@ -121,7 +129,7 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                 .categoryName(record.getCategoryName())
                 .securityGradeId(record.getSecurityGradeId())
                 .securityGradeName(record.getSecurityGradeName())
-                .recognitionMethod(record.getRecognitionMethod() != null ? record.getRecognitionMethod() : "AUTO")
+                .recognitionMethod(record.getRecognitionMethod() != null ? record.getRecognitionMethod() : RecognitionMethodEnum.AUTO.getCode())
                 .priority(record.getMatchedRuleId() != null ? 10 : 20)
                 .confidenceScore(record.getConfidenceScore() != null ? record.getConfidenceScore() : 90.0)
                 .isRecommended(false)
@@ -138,9 +146,9 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                     .categoryName(record.getRecommendedCategoryName())
                     .securityGradeId(record.getSecurityGradeId() != null ? record.getSecurityGradeId() : 3L)
                     .securityGradeName(record.getSecurityGradeName() != null ? record.getSecurityGradeName() : "L3")
-                    .recognitionMethod("AUTO")
+                    .recognitionMethod(RecognitionMethodEnum.AUTO.getCode())
                     .priority(5)
-                    .confidenceScore(99.5)
+                    .confidenceScore(RecognitionRuleConstants.RECOMMENDED_MATCH_CONFIDENCE)
                     .isRecommended(true)
                     .isCurrentEffective(false)
                     .categoryModifiedAt(record.getUpdatedAt())
@@ -154,7 +162,7 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                 .tableComment(resolveTableComment(record.getTableName()))
                 .fieldName(record.getFieldName())
                 .fieldComment(record.getFieldComment())
-                .assetSourceType(record.getAssetSourceType() != null ? record.getAssetSourceType() : "DATAPHIN")
+                .assetSourceType(record.getAssetSourceType() != null ? record.getAssetSourceType() : DataSecurityConstants.ASSET_SOURCE_DATAPHIN)
                 .assetSourceInfo(record.getAssetSourceInfo() != null ? record.getAssetSourceInfo() : record.getDatasourceName())
                 .sampleData(record.getSampleData())
                 .samplePreview(record.getSamplePreview() != null ? record.getSamplePreview() : record.getSampleData())
@@ -163,10 +171,10 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                 .categoryName(record.getCategoryName())
                 .securityGradeId(record.getSecurityGradeId())
                 .securityGradeName(record.getSecurityGradeName())
-                .recognitionMethod(record.getRecognitionMethod() != null ? record.getRecognitionMethod() : "AUTO")
+                .recognitionMethod(record.getRecognitionMethod() != null ? record.getRecognitionMethod() : RecognitionMethodEnum.AUTO.getCode())
                 .priority(record.getMatchedRuleId() != null ? 10 : 20)
                 .confidenceScore(record.getConfidenceScore() != null ? record.getConfidenceScore() : 90.0)
-                .maskingStatus(record.getMaskingStatus() != null ? record.getMaskingStatus() : "ENABLED")
+                .maskingStatus(record.getMaskingStatus() != null ? record.getMaskingStatus() : CommonStatusEnum.ENABLED.getCode())
                 .maskingStatusUpdatedAt(record.getMaskingStatusUpdatedAt() != null ? record.getMaskingStatusUpdatedAt() : record.getUpdatedAt())
                 .isLocked(Boolean.TRUE.equals(record.getIsLocked()))
                 .categoryModifiedAt(record.getUpdatedAt())
@@ -182,8 +190,8 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
     @Transactional(rollbackFor = Exception.class)
     public void updateMaskingStatus(Long id, String status) {
         SensitiveTaggingRecord record = recordGateway.findById(id)
-                .orElseThrow(() -> new DataSecurityException("RESULT_NOT_FOUND", "识别结果记录不存在: " + id));
-        record.toggleMaskingStatus("ENABLED".equalsIgnoreCase(status));
+                .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RESULT_NOT_FOUND, "识别结果记录不存在: " + id));
+        record.toggleMaskingStatus(CommonStatusEnum.isEnabled(status));
         recordGateway.update(record);
     }
 
@@ -191,7 +199,7 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
     @Transactional(rollbackFor = Exception.class)
     public void batchUpdateMaskingStatus(List<Long> ids, String status) {
         if (ids == null || ids.isEmpty()) return;
-        boolean enabled = "ENABLED".equalsIgnoreCase(status);
+        boolean enabled = CommonStatusEnum.isEnabled(status);
         for (Long id : ids) {
             recordGateway.findById(id).ifPresent(record -> {
                 record.toggleMaskingStatus(enabled);
@@ -204,9 +212,9 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
     @Transactional(rollbackFor = Exception.class)
     public void lockResult(Long id, boolean isLocked) {
         SensitiveTaggingRecord record = recordGateway.findById(id)
-                .orElseThrow(() -> new DataSecurityException("RESULT_NOT_FOUND", "识别结果记录不存在: " + id));
+                .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RESULT_NOT_FOUND, "识别结果记录不存在: " + id));
         if (isLocked) {
-            record.lock("admin");
+            record.lock(DataSecurityConstants.DEFAULT_OPERATOR);
         } else {
             record.unlock();
         }
@@ -220,7 +228,7 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
         for (Long id : ids) {
             recordGateway.findById(id).ifPresent(record -> {
                 if (isLocked) {
-                    record.lock("admin");
+                    record.lock(DataSecurityConstants.DEFAULT_OPERATOR);
                 } else {
                     record.unlock();
                 }
@@ -237,7 +245,7 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
         SecurityGrade grade = null;
         if (dto.getCategoryId() != null) {
             category = dataCategoryGateway.findById(dto.getCategoryId())
-                    .orElseThrow(() -> new DataSecurityException("CATEGORY_NOT_FOUND", "目标数据分类不存在: " + dto.getCategoryId()));
+                    .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.CATEGORY_NOT_FOUND, "目标数据分类不存在: " + dto.getCategoryId()));
             if (category.getSecurityGradeId() != null) {
                 grade = securityGradeGateway.findById(category.getSecurityGradeId()).orElse(null);
             }
@@ -254,12 +262,12 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                             finalGrade != null ? finalGrade.getId() : null,
                             finalGrade != null ? finalGrade.getGradeName() : null,
                             finalGrade != null ? finalGrade.getSensitivityScore() : 50,
-                            "MANUAL".equalsIgnoreCase(dto.getRecognitionMethod()),
-                            "admin"
+                            RecognitionMethodEnum.isManual(dto.getRecognitionMethod()),
+                            DataSecurityConstants.DEFAULT_OPERATOR
                     );
                 } else if (dto.getRecognitionMethod() != null) {
-                    if ("MANUAL".equalsIgnoreCase(dto.getRecognitionMethod())) {
-                        record.lock("admin");
+                    if (RecognitionMethodEnum.isManual(dto.getRecognitionMethod())) {
+                        record.lock(DataSecurityConstants.DEFAULT_OPERATOR);
                     } else {
                         record.unlock();
                     }
@@ -282,14 +290,14 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
     @Transactional(rollbackFor = Exception.class)
     public void adoptRecommendation(Long id, Long candidateCategoryId) {
         SensitiveTaggingRecord record = recordGateway.findById(id)
-                .orElseThrow(() -> new DataSecurityException("RESULT_NOT_FOUND", "识别结果记录不存在: " + id));
+                .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RESULT_NOT_FOUND, "识别结果记录不存在: " + id));
         Long targetCatId = candidateCategoryId != null ? candidateCategoryId : record.getRecommendedCategoryId();
         if (targetCatId == null) {
-            throw new DataSecurityException("NO_RECOMMENDATION", "当前记录无推荐打标结果");
+            throw new DataSecurityException(DataSecurityErrorCode.NO_RECOMMENDATION, "当前记录无推荐打标结果");
         }
 
         DataCategory category = dataCategoryGateway.findById(targetCatId)
-                .orElseThrow(() -> new DataSecurityException("CATEGORY_NOT_FOUND", "推荐数据分类不存在: " + targetCatId));
+                .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.CATEGORY_NOT_FOUND, "推荐数据分类不存在: " + targetCatId));
 
         SecurityGrade grade = null;
         if (category.getSecurityGradeId() != null) {
@@ -301,7 +309,7 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                 category.getCategoryName(),
                 grade != null ? grade.getId() : null,
                 grade != null ? grade.getGradeName() : null,
-                "admin"
+                DataSecurityConstants.DEFAULT_OPERATOR
         );
         recordGateway.update(record);
     }
@@ -321,15 +329,15 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void manualAdd(RecognitionResultManualAddDTO dto) {
-        String dedupStrategy = dto.getDedupStrategy() != null ? dto.getDedupStrategy() : "OVERWRITE_ALL";
+        String dedupStrategy = dto.getDedupStrategy() != null ? dto.getDedupStrategy() : DedupConflictStrategyEnum.OVERWRITE_ALL.getCode();
 
         int successCount = 0;
         for (RecognitionResultManualAddDTO.ManualAddRecordItemDTO item : dto.getRecords()) {
-            String dsId = item.getDatasourceId() != null ? item.getDatasourceId() : "default_ds";
+            String dsId = item.getDatasourceId() != null ? item.getDatasourceId() : DataSecurityConstants.DEFAULT_DATASOURCE_ID;
             Optional<SensitiveTaggingRecord> existingOpt = recordGateway.findByTableAndField(dsId, item.getTableName(), item.getFieldName());
 
             DataCategory category = dataCategoryGateway.findById(item.getCategoryId())
-                    .orElseThrow(() -> new DataSecurityException("CATEGORY_NOT_FOUND", "数据分类不存在: " + item.getCategoryId()));
+                    .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.CATEGORY_NOT_FOUND, "数据分类不存在: " + item.getCategoryId()));
             SecurityGrade grade = null;
             if (category.getSecurityGradeId() != null) {
                 grade = securityGradeGateway.findById(category.getSecurityGradeId()).orElse(null);
@@ -337,11 +345,11 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
 
             if (existingOpt.isPresent()) {
                 SensitiveTaggingRecord existing = existingOpt.get();
-                if ("RETAIN_EXISTING".equalsIgnoreCase(dedupStrategy)) {
+                if (DedupConflictStrategyEnum.RETAIN_EXISTING.getCode().equalsIgnoreCase(dedupStrategy)) {
                     // 保留已有，跳过
                     continue;
                 }
-                if ("OVERWRITE_UNLOCKED".equalsIgnoreCase(dedupStrategy) && Boolean.TRUE.equals(existing.getIsLocked())) {
+                if (DedupConflictStrategyEnum.OVERWRITE_UNLOCKED.getCode().equalsIgnoreCase(dedupStrategy) && Boolean.TRUE.equals(existing.getIsLocked())) {
                     // 仅覆盖未锁定，已锁定跳过
                     continue;
                 }
@@ -353,20 +361,20 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                         grade != null ? grade.getGradeName() : "L1",
                         grade != null ? grade.getSensitivityScore() : 1,
                         true,
-                        "admin"
+                        DataSecurityConstants.DEFAULT_OPERATOR
                 );
                 if (item.getMaskingStatus() != null) {
-                    existing.toggleMaskingStatus("ENABLED".equalsIgnoreCase(item.getMaskingStatus()));
+                    existing.toggleMaskingStatus(CommonStatusEnum.isEnabled(item.getMaskingStatus()));
                 }
                 recordGateway.update(existing);
                 successCount++;
             } else {
                 // 新建打标
                 SensitiveTaggingRecord newRecord = SensitiveTaggingRecord.builder()
-                        .id(System.currentTimeMillis() + (long)(Math.random() * 10000))
+                        .id(System.currentTimeMillis() + (long)(Math.random() * DataSecurityConstants.DEFAULT_ID_RANDOM_BOUND))
                         .datasourceId(dsId)
                         .datasourceName(item.getDatasourceName() != null ? item.getDatasourceName() : dsId)
-                        .schemaName(item.getSchemaName() != null ? item.getSchemaName() : "default_schema")
+                        .schemaName(item.getSchemaName() != null ? item.getSchemaName() : DataSecurityConstants.DEFAULT_SCHEMA_NAME)
                         .tableName(item.getTableName())
                         .fieldName(item.getFieldName())
                         .fieldComment(item.getFieldComment())
@@ -375,17 +383,17 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                         .securityGradeId(grade != null ? grade.getId() : 1L)
                         .securityGradeName(grade != null ? grade.getGradeName() : "L1")
                         .sensitivityScore(grade != null ? grade.getSensitivityScore() : 1)
-                        .sourceType("MANUAL_LOCKED")
-                        .recognitionMethod("MANUAL")
+                        .sourceType(RecognitionSourceTypeEnum.MANUAL_LOCKED.getCode())
+                        .recognitionMethod(RecognitionMethodEnum.MANUAL.getCode())
                         .isLocked(true)
-                        .lockUser("admin")
+                        .lockUser(DataSecurityConstants.DEFAULT_OPERATOR)
                         .lockTime(LocalDateTime.now())
-                        .maskingStatus(item.getMaskingStatus() != null ? item.getMaskingStatus() : "ENABLED")
+                        .maskingStatus(item.getMaskingStatus() != null ? item.getMaskingStatus() : CommonStatusEnum.ENABLED.getCode())
                         .maskingStatusUpdatedAt(LocalDateTime.now())
-                        .assetSourceType(item.getAssetSourceType() != null ? item.getAssetSourceType() : "DATAPHIN")
+                        .assetSourceType(item.getAssetSourceType() != null ? item.getAssetSourceType() : DataSecurityConstants.ASSET_SOURCE_DATAPHIN)
                         .assetSourceInfo(item.getAssetSourceInfo() != null ? item.getAssetSourceInfo() : (item.getDatasourceName() != null ? item.getDatasourceName() : item.getTableName()))
                         .hasBetterRecommendation(false)
-                        .status("CONFIRMED")
+                        .status(RecognitionStatusEnum.CONFIRMED.getCode())
                         .createdAt(LocalDateTime.now())
                         .updatedAt(LocalDateTime.now())
                         .build();
@@ -399,14 +407,14 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                 .id(System.currentTimeMillis())
                 .batchType("MANUAL_ADD")
                 .fileName("按表手动添加 (" + dto.getRecords().size() + "个字段)")
-                .assetType("DATAPHIN")
+                .assetType(DataSecurityConstants.ASSET_SOURCE_DATAPHIN)
                 .totalCount(dto.getRecords().size())
                 .successCount(successCount)
                 .failedCount(dto.getRecords().size() - successCount)
                 .conflictStrategy(dedupStrategy)
                 .maskingPolicy("AUTO_APPLY")
                 .status(successCount == dto.getRecords().size() ? "SUCCESS" : "PARTIAL_FAILED")
-                .operator("admin")
+                .operator(DataSecurityConstants.DEFAULT_OPERATOR)
                 .createdAt(LocalDateTime.now())
                 .build());
     }
@@ -473,17 +481,17 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                 .securityGradeId(3L)
                 .securityGradeName("L3")
                 .sensitivityScore(3)
-                .sourceType("MANUAL_LOCKED")
-                .recognitionMethod("MANUAL")
+                .sourceType(RecognitionSourceTypeEnum.MANUAL_LOCKED.getCode())
+                .recognitionMethod(RecognitionMethodEnum.MANUAL.getCode())
                 .isLocked(true)
-                .lockUser("admin")
+                .lockUser(DataSecurityConstants.DEFAULT_OPERATOR)
                 .lockTime(LocalDateTime.now())
-                .maskingStatus("ENABLED")
+                .maskingStatus(CommonStatusEnum.ENABLED.getCode())
                 .maskingStatusUpdatedAt(LocalDateTime.now())
-                .assetSourceType(assetType != null ? assetType : "DATAPHIN")
+                .assetSourceType(assetType != null ? assetType : DataSecurityConstants.ASSET_SOURCE_DATAPHIN)
                 .assetSourceInfo("fashion_cdm_dev (服饰结算项目) / LD_Fashion_dev (服饰结算)")
                 .hasBetterRecommendation(false)
-                .status("CONFIRMED")
+                .status(RecognitionStatusEnum.CONFIRMED.getCode())
                 .sampleData("622202100018273619")
                 .samplePreview("622202******3619")
                 .confidenceScore(99.0)
@@ -497,14 +505,14 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                 .id(System.currentTimeMillis())
                 .batchType("IMPORT")
                 .fileName(fileName != null ? fileName : "batch_import_data.xlsx")
-                .assetType(assetType != null ? assetType : "DATAPHIN")
+                .assetType(assetType != null ? assetType : DataSecurityConstants.ASSET_SOURCE_DATAPHIN)
                 .totalCount(2)
                 .successCount(2)
                 .failedCount(0)
                 .conflictStrategy(conflictStrategy)
                 .maskingPolicy(maskingPolicy)
                 .status("SUCCESS")
-                .operator("admin")
+                .operator(DataSecurityConstants.DEFAULT_OPERATOR)
                 .createdAt(LocalDateTime.now())
                 .build());
     }
@@ -521,7 +529,7 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                 .tableComment(resolveTableComment(r.getTableName()))
                 .fieldName(r.getFieldName())
                 .fieldComment(r.getFieldComment())
-                .assetSourceType(r.getAssetSourceType() != null ? r.getAssetSourceType() : "DATAPHIN")
+                .assetSourceType(r.getAssetSourceType() != null ? r.getAssetSourceType() : DataSecurityConstants.ASSET_SOURCE_DATAPHIN)
                 .assetSourceInfo(r.getAssetSourceInfo() != null ? r.getAssetSourceInfo() : r.getDatasourceName())
                 .datasourceId(r.getDatasourceId())
                 .datasourceName(r.getDatasourceName())
@@ -530,9 +538,9 @@ public class RecognitionResultAppServiceImpl implements RecognitionResultAppServ
                 .categoryName(r.getCategoryName())
                 .securityGradeId(r.getSecurityGradeId())
                 .securityGradeName(r.getSecurityGradeName())
-                .maskingStatus(r.getMaskingStatus() != null ? r.getMaskingStatus() : "ENABLED")
+                .maskingStatus(r.getMaskingStatus() != null ? r.getMaskingStatus() : CommonStatusEnum.ENABLED.getCode())
                 .maskingStatusUpdatedAt(r.getMaskingStatusUpdatedAt() != null ? r.getMaskingStatusUpdatedAt() : r.getUpdatedAt())
-                .recognitionMethod(r.getRecognitionMethod() != null ? r.getRecognitionMethod() : "AUTO")
+                .recognitionMethod(r.getRecognitionMethod() != null ? r.getRecognitionMethod() : RecognitionMethodEnum.AUTO.getCode())
                 .isLocked(Boolean.TRUE.equals(r.getIsLocked()))
                 .lockUser(r.getLockUser())
                 .lockTime(r.getLockTime())

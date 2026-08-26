@@ -24,6 +24,7 @@ public class CategoryTreeNode {
     private List<String> admins = new ArrayList<>();
     private String description;
     private Integer sortOrder;
+    private Integer categoryCount;
     private String createdBy;
     private LocalDateTime createdAt;
     private String updatedBy;

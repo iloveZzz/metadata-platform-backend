@@ -1,5 +1,7 @@
 package com.yss.datasecurity.domain.model;
 
+import com.yss.datasecurity.domain.constant.RecognitionRuleConstants;
+import com.yss.datasecurity.domain.exception.DataSecurityErrorCode;
 import com.yss.datasecurity.domain.exception.DataSecurityException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -33,8 +35,9 @@ public class SensitiveRule {
     private LocalDateTime updatedAt;
 
     public void validatePriority() {
-        if (priority == null || priority < 1 || priority > 100) {
-            throw new DataSecurityException("INVALID_RULE_PRIORITY", "规则优先级必须在 1~100 范围内");
+        if (priority == null || priority < RecognitionRuleConstants.MIN_PRIORITY || priority > RecognitionRuleConstants.MAX_PRIORITY) {
+            throw new DataSecurityException(DataSecurityErrorCode.INVALID_RULE_PRIORITY,
+                    "规则优先级必须在 " + RecognitionRuleConstants.MIN_PRIORITY + "~" + RecognitionRuleConstants.MAX_PRIORITY + " 范围内");
         }
     }
 }

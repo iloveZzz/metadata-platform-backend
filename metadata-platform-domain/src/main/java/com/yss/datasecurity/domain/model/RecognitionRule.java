@@ -1,5 +1,9 @@
 package com.yss.datasecurity.domain.model;
 
+import com.yss.datasecurity.domain.constant.RecognitionRuleConstants;
+import com.yss.datasecurity.domain.enums.CategoryScopeModeEnum;
+import com.yss.datasecurity.domain.enums.CommonStatusEnum;
+import com.yss.datasecurity.domain.exception.DataSecurityErrorCode;
 import com.yss.datasecurity.domain.exception.DataSecurityException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -14,7 +18,7 @@ import java.util.regex.Pattern;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RecognitionRule {
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_\\u4e00-\\u9fa5]{1,12}$");
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_\\u4e00-\\u9fa5]{1," + RecognitionRuleConstants.MAX_RULE_NAME_LENGTH + "}$");
 
     private Long id;
     private String ruleName; // 包含中文、字母、数字、下划线（_），不超过12个字符
@@ -36,22 +40,30 @@ public class RecognitionRule {
 
     public void validate() {
         if (ruleName == null || ruleName.trim().isEmpty()) {
-            throw new DataSecurityException("INVALID_RULE_NAME", "识别规则名称不能为空");
+            throw new DataSecurityException(DataSecurityErrorCode.INVALID_RULE_NAME, "识别规则名称不能为空");
         }
         if (!NAME_PATTERN.matcher(ruleName.trim()).matches()) {
-            throw new DataSecurityException("INVALID_RULE_NAME", "识别规则名称必须由中文、字母、数字、下划线组成且不超过12个字符");
+            throw new DataSecurityException(DataSecurityErrorCode.INVALID_RULE_NAME,
+                    "识别规则名称必须由中文、字母、数字、下划线组成且不超过" + RecognitionRuleConstants.MAX_RULE_NAME_LENGTH + "个字符");
         }
-        if (description != null && description.length() > 128) {
-            throw new DataSecurityException("INVALID_RULE_DESCRIPTION", "识别规则说明不能超过128个字符");
+        if (description != null && description.length() > RecognitionRuleConstants.MAX_DESCRIPTION_LENGTH) {
+            throw new DataSecurityException(DataSecurityErrorCode.INVALID_RULE_DESCRIPTION,
+                    "识别规则说明不能超过" + RecognitionRuleConstants.MAX_DESCRIPTION_LENGTH + "个字符");
         }
         if (categoryScopeMode == null || categoryScopeMode.trim().isEmpty()) {
-            categoryScopeMode = "ALL";
+            categoryScopeMode = CategoryScopeModeEnum.ALL.getCode();
         }
         if (scanSourceType == null || scanSourceType.trim().isEmpty()) {
             scanSourceType = "COMPUTE_ENGINE";
         }
         if (status == null || status.trim().isEmpty()) {
-            status = "ENABLED";
+            status = CommonStatusEnum.ENABLED.getCode();
+        }
+        if (priority == null) {
+            priority = RecognitionRuleConstants.DEFAULT_RULE_PRIORITY;
+        } else if (priority < RecognitionRuleConstants.MIN_PRIORITY || priority > RecognitionRuleConstants.MAX_PRIORITY) {
+            throw new DataSecurityException(DataSecurityErrorCode.INVALID_RULE_PRIORITY,
+                    "规则优先级必须在 " + RecognitionRuleConstants.MIN_PRIORITY + "~" + RecognitionRuleConstants.MAX_PRIORITY + " 范围内");
         }
     }
 }

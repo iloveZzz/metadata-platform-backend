@@ -202,4 +202,27 @@ class RecognitionResultControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].id").value(8001));
     }
+
+    @Test
+    @DisplayName("DELETE /api/v1/sec/recognition-results/batch - 请求体JSON批量删除")
+    void testBatchDeleteResults_JsonBody() throws Exception {
+        doNothing().when(recognitionResultAppService).batchDeleteResults(Arrays.asList(3001L, 3002L));
+
+        mockMvc.perform(delete("/api/v1/sec/recognition-results/batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"ids\":[3001,3002]}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(true));
+    }
+
+    @Test
+    @DisplayName("DELETE /api/v1/sec/recognition-results/batch - Query参数批量删除")
+    void testBatchDeleteResults_RequestParam() throws Exception {
+        doNothing().when(recognitionResultAppService).batchDeleteResults(Arrays.asList(3001L, 3002L));
+
+        mockMvc.perform(delete("/api/v1/sec/recognition-results/batch")
+                        .param("ids", "3001,3002"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(true));
+    }
 }

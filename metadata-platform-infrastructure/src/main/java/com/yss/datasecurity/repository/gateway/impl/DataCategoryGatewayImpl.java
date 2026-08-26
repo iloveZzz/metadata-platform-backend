@@ -16,7 +16,9 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -151,6 +153,21 @@ public class DataCategoryGatewayImpl implements DataCategoryGateway {
         dataCategoryRepository.deleteBatchIds(categoryIds);
     }
 
+    @Override
+    public Map<Long, Integer> countCategoriesGroupByTreeNode() {
+        List<DataCategoryPO> all = dataCategoryRepository.selectList(
+            new LambdaQueryWrapper<DataCategoryPO>()
+                .select(DataCategoryPO::getTreeNodeId)
+        );
+        Map<Long, Integer> countMap = new HashMap<>();
+        for (DataCategoryPO po : all) {
+            if (po.getTreeNodeId() != null) {
+                countMap.merge(po.getTreeNodeId(), 1, Integer::sum);
+            }
+        }
+        return countMap;
+    }
+
     private LambdaQueryWrapper<DataCategoryPO> buildQuery(Long treeNodeId, String keyword, String status) {
         LambdaQueryWrapper<DataCategoryPO> query = new LambdaQueryWrapper<>();
         if (treeNodeId != null && treeNodeId > 0) {
@@ -161,6 +178,7 @@ public class DataCategoryGatewayImpl implements DataCategoryGateway {
                     new LambdaQueryWrapper<CategoryTreePO>()
                         .likeRight(CategoryTreePO::getNodePath, pathPrefix)
                         .or().eq(CategoryTreePO::getId, treeNodeId)
+                        .or().eq(CategoryTreePO::getParentId, treeNodeId)
                 );
                 List<Long> nodeIds = descendantNodes.stream().map(CategoryTreePO::getId).collect(Collectors.toList());
                 if (!nodeIds.isEmpty()) {

@@ -8,6 +8,8 @@ import com.yss.datasecurity.application.dto.SensitiveRuleUpdateDTO;
 import com.yss.datasecurity.application.dto.SensitiveRuleVO;
 import com.yss.datasecurity.application.dto.SimulationFieldMatchVO;
 import com.yss.datasecurity.application.service.SensitiveRuleAppService;
+import com.yss.datasecurity.domain.enums.CommonStatusEnum;
+import com.yss.datasecurity.domain.exception.DataSecurityErrorCode;
 import com.yss.datasecurity.domain.exception.DataSecurityException;
 import com.yss.datasecurity.domain.gateway.SensitiveRuleGateway;
 import com.yss.datasecurity.domain.model.SensitiveRule;
@@ -31,14 +33,14 @@ public class SensitiveRuleAppServiceImpl implements SensitiveRuleAppService {
     public PageResult<SensitiveRuleVO> pageRules(int pageIndex, int pageSize, String keyword, String status, String scanScopeType, String ruleType) {
         List<SensitiveRule> list = sensitiveRuleGateway.pageRules(pageIndex, pageSize, keyword, status, scanScopeType, ruleType);
         long total = sensitiveRuleGateway.countRules(keyword, status, scanScopeType, ruleType);
-        List<SensitiveRuleVO> voList = convertor.toVOList(list);
+        List<SensitiveRuleVO> voList = convertor.toSummaryVOList(list);
         return PageResult.of(voList, (int) total, pageSize, pageIndex);
     }
 
     @Override
     public SensitiveRuleVO getDetail(Long id) {
         SensitiveRule rule = sensitiveRuleGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("RULE_NOT_FOUND", "识别特征不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RULE_NOT_FOUND, "识别特征不存在: " + id));
         return convertor.toVO(rule);
     }
 
@@ -46,7 +48,7 @@ public class SensitiveRuleAppServiceImpl implements SensitiveRuleAppService {
     @Transactional(rollbackFor = Exception.class)
     public Long create(SensitiveRuleCreateDTO dto) {
         sensitiveRuleGateway.findByName(dto.getRuleName()).ifPresent(r -> {
-            throw new DataSecurityException("RULE_NAME_DUPLICATE", "特征名称已存在: " + dto.getRuleName());
+            throw new DataSecurityException(DataSecurityErrorCode.RULE_NAME_DUPLICATE, "特征名称已存在: " + dto.getRuleName());
         });
 
         SensitiveRule domain = convertor.toDomain(dto);
@@ -62,11 +64,11 @@ public class SensitiveRuleAppServiceImpl implements SensitiveRuleAppService {
     @Transactional(rollbackFor = Exception.class)
     public void update(Long id, SensitiveRuleUpdateDTO dto) {
         SensitiveRule rule = sensitiveRuleGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("RULE_NOT_FOUND", "识别特征不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RULE_NOT_FOUND, "识别特征不存在: " + id));
 
         sensitiveRuleGateway.findByName(dto.getRuleName()).ifPresent(r -> {
             if (!r.getId().equals(id)) {
-                throw new DataSecurityException("RULE_NAME_DUPLICATE", "特征名称已存在: " + dto.getRuleName());
+                throw new DataSecurityException(DataSecurityErrorCode.RULE_NAME_DUPLICATE, "特征名称已存在: " + dto.getRuleName());
             }
         });
 
@@ -79,9 +81,9 @@ public class SensitiveRuleAppServiceImpl implements SensitiveRuleAppService {
     @Transactional(rollbackFor = Exception.class)
     public void delete(Long id) {
         SensitiveRule rule = sensitiveRuleGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("RULE_NOT_FOUND", "识别特征不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RULE_NOT_FOUND, "识别特征不存在: " + id));
         if ("BUILTIN".equalsIgnoreCase(rule.getRuleType())) {
-            throw new DataSecurityException("BUILTIN_RULE_CANNOT_DELETE", "内置识别特征受系统保护，不可删除");
+            throw new DataSecurityException(DataSecurityErrorCode.BUILTIN_RULE_CANNOT_DELETE, "内置识别特征受系统保护，不可删除");
         }
         sensitiveRuleGateway.deleteById(id);
     }
@@ -90,7 +92,7 @@ public class SensitiveRuleAppServiceImpl implements SensitiveRuleAppService {
     @Transactional(rollbackFor = Exception.class)
     public void updateStatus(Long id, String status) {
         sensitiveRuleGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("RULE_NOT_FOUND", "识别特征不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RULE_NOT_FOUND, "识别特征不存在: " + id));
         sensitiveRuleGateway.updateStatus(id, status);
     }
 
@@ -98,7 +100,7 @@ public class SensitiveRuleAppServiceImpl implements SensitiveRuleAppService {
     @Transactional(rollbackFor = Exception.class)
     public Long cloneRule(Long id) {
         SensitiveRule source = sensitiveRuleGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("RULE_NOT_FOUND", "待克隆特征不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RULE_NOT_FOUND, "待克隆特征不存在: " + id));
 
         String cloneName = source.getRuleName() + "_COPY";
         SensitiveRule clone = SensitiveRule.builder()
@@ -107,7 +109,7 @@ public class SensitiveRuleAppServiceImpl implements SensitiveRuleAppService {
             .description("克隆自: " + source.getRuleName() + (source.getDescription() != null ? " - " + source.getDescription() : ""))
             .priority(source.getPriority())
             .owner(source.getOwner())
-            .status("ENABLED")
+            .status(CommonStatusEnum.ENABLED.getCode())
             .categoryScopeMode(source.getCategoryScopeMode())
             .categoryScopeIds(source.getCategoryScopeIds())
             .scanScopeType(source.getScanScopeType())
@@ -124,7 +126,7 @@ public class SensitiveRuleAppServiceImpl implements SensitiveRuleAppService {
     @Transactional(rollbackFor = Exception.class)
     public void resetRule(Long id) {
         sensitiveRuleGateway.findById(id)
-            .orElseThrow(() -> new DataSecurityException("RULE_NOT_FOUND", "敏感识别规则不存在: " + id));
+            .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.RULE_NOT_FOUND, "敏感识别规则不存在: " + id));
         sensitiveRuleGateway.clearTaggedFields(id);
     }
 
@@ -159,17 +161,13 @@ public class SensitiveRuleAppServiceImpl implements SensitiveRuleAppService {
         try {
             int idx = text.indexOf(key);
             if (idx >= 0) {
-                int colon = text.indexOf(":", idx);
-                if (colon >= 0) {
-                    int quote1 = text.indexOf("\"", colon);
-                    int quote2 = text.indexOf("\"", quote1 + 1);
-                    if (quote1 >= 0 && quote2 > quote1) {
-                        return text.substring(quote1 + 1, quote2);
-                    }
-                }
+                int start = text.indexOf(":", idx) + 1;
+                int end = text.indexOf(",", start);
+                if (end < 0) end = text.indexOf("}", start);
+                if (end < 0) end = text.length();
+                return text.substring(start, end).replace("\"", "").trim();
             }
-        } catch (Exception ignored) {
-        }
+        } catch (Exception ignored) {}
         return null;
     }
 }

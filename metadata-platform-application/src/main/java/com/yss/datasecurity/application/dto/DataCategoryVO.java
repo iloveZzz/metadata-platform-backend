@@ -30,5 +30,6 @@ public class DataCategoryVO implements Serializable {
     private String disablePolicy;
     private String description;
     private List<String> recognitionFeatures;
+    private Object scanDimensionConfig;
     private Integer activeFieldsCount;
 }

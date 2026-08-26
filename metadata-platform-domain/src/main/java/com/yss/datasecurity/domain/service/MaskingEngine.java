@@ -1,5 +1,8 @@
 package com.yss.datasecurity.domain.service;
 
+import com.yss.datasecurity.domain.constant.MaskingConstants;
+import com.yss.datasecurity.domain.enums.CryptoAlgorithmEnum;
+import com.yss.datasecurity.domain.enums.MaskingAlgorithmTypeEnum;
 import com.yss.datasecurity.domain.model.MaskingRule;
 import org.springframework.stereotype.Component;
 
@@ -20,19 +23,20 @@ public class MaskingEngine {
             return strVal;
         }
 
-        String algoType = rule != null ? rule.getAlgorithmType() : "MASKING";
+        String algoType = rule != null ? rule.getAlgorithmType() : MaskingAlgorithmTypeEnum.MASKING.getCode();
         Map<String, Object> params = rule != null && rule.getAlgorithmParams() != null 
             ? rule.getAlgorithmParams() 
             : new HashMap<>();
 
-        switch (algoType != null ? algoType.toUpperCase() : "MASKING") {
-            case "MASKING":
+        MaskingAlgorithmTypeEnum typeEnum = MaskingAlgorithmTypeEnum.of(algoType);
+        switch (typeEnum) {
+            case MASKING:
                 return applyMasking(strVal, params);
-            case "HASH_SALT":
+            case HASH_SALT:
                 return applyHashSalt(strVal, params);
-            case "ENCRYPTION":
+            case ENCRYPTION:
                 return applyEncryption(strVal, params);
-            case "SPECIAL":
+            case SPECIAL:
                 return applySpecial(strVal, params);
             default:
                 return applyDefaultFallback(strVal);
@@ -59,9 +63,9 @@ public class MaskingEngine {
 
     private String applyMasking(String val, Map<String, Object> params) {
         int len = val.length();
-        int start = getIntParam(params, "start", 3);
-        int end = getIntParam(params, "end", 7);
-        String maskChar = getStringParam(params, "maskChar", "*");
+        int start = getIntParam(params, MaskingConstants.PARAM_START, MaskingConstants.DEFAULT_MASK_START);
+        int end = getIntParam(params, MaskingConstants.PARAM_END, MaskingConstants.DEFAULT_MASK_END);
+        String maskChar = getStringParam(params, MaskingConstants.PARAM_MASK_CHAR, MaskingConstants.DEFAULT_MASK_CHAR);
 
         if (start < 0) start = 0;
         if (start > len) start = len;
@@ -78,10 +82,10 @@ public class MaskingEngine {
     }
 
     private String applyHashSalt(String val, Map<String, Object> params) {
-        String hashType = getStringParam(params, "hashType", "SHA256");
-        String salt = getStringParam(params, "salt", "sec_salt_yss");
+        String hashType = getStringParam(params, MaskingConstants.PARAM_HASH_TYPE, MaskingConstants.DEFAULT_HASH_TYPE);
+        String salt = getStringParam(params, MaskingConstants.PARAM_SALT, MaskingConstants.DEFAULT_SALT);
         try {
-            MessageDigest md = MessageDigest.getInstance("MD5".equalsIgnoreCase(hashType) ? "MD5" : "SHA-256");
+            MessageDigest md = MessageDigest.getInstance(CryptoAlgorithmEnum.MD5.getCode().equalsIgnoreCase(hashType) ? "MD5" : "SHA-256");
             byte[] digest = md.digest((val + salt).getBytes(StandardCharsets.UTF_8));
             StringBuilder sb = new StringBuilder();
             for (byte b : digest) {
@@ -94,8 +98,8 @@ public class MaskingEngine {
     }
 
     private String applyEncryption(String val, Map<String, Object> params) {
-        String algo = getStringParam(params, "algorithm", "FPE_FF1");
-        if ("FPE_FF1".equalsIgnoreCase(algo)) {
+        String algo = getStringParam(params, MaskingConstants.PARAM_ALGORITHM, MaskingConstants.ALGO_FPE_FF1);
+        if (MaskingConstants.ALGO_FPE_FF1.equalsIgnoreCase(algo)) {
             // 格式保留加密模拟：数字映射保持长度和数字类型
             StringBuilder sb = new StringBuilder();
             for (char c : val.toCharArray()) {

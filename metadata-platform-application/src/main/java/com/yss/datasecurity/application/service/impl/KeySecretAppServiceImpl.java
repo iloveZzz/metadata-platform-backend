@@ -10,6 +10,10 @@ import com.yss.datasecurity.application.dto.KeySecretUpdateDTO;
 import com.yss.datasecurity.application.dto.KeySecretVO;
 import com.yss.datasecurity.application.dto.KeyTaskReferenceVO;
 import com.yss.datasecurity.application.service.KeySecretAppService;
+import com.yss.datasecurity.domain.constant.DataSecurityConstants;
+import com.yss.datasecurity.domain.enums.CryptoAlgorithmEnum;
+import com.yss.datasecurity.domain.enums.KeyTypeEnum;
+import com.yss.datasecurity.domain.exception.DataSecurityErrorCode;
 import com.yss.datasecurity.domain.exception.DataSecurityException;
 import com.yss.datasecurity.domain.gateway.KeySecretGateway;
 import com.yss.datasecurity.domain.model.KeyPermission;
@@ -35,7 +39,7 @@ public class KeySecretAppServiceImpl implements KeySecretAppService {
 
     @Override
     public PageResult<KeySecretVO> pageKeys(int pageIndex, int pageSize, String keyword, String keyType, String algorithm, String genType, String owner, Boolean isMine) {
-        String currentUsername = "admin";
+        String currentUsername = DataSecurityConstants.DEFAULT_OPERATOR;
         List<KeySecret> list = keySecretGateway.pageKeys(pageIndex, pageSize, keyword, keyType, algorithm, genType, owner, isMine, currentUsername);
         long total = keySecretGateway.countKeys(keyword, keyType, algorithm, genType, owner, isMine, currentUsername);
         List<KeySecretVO> voList = convertor.toVOList(list);
@@ -46,7 +50,7 @@ public class KeySecretAppServiceImpl implements KeySecretAppService {
     @Transactional(rollbackFor = Exception.class)
     public Long createKey(KeySecretCreateDTO dto) {
         keySecretGateway.findByName(dto.getKeyName()).ifPresent(k -> {
-            throw new DataSecurityException("KEY_NAME_DUPLICATE", "密钥名称已存在: " + dto.getKeyName());
+            throw new DataSecurityException(DataSecurityErrorCode.KEY_NAME_DUPLICATE, "密钥名称已存在: " + dto.getKeyName());
         });
 
         String rawSecretKey;
@@ -55,15 +59,15 @@ public class KeySecretAppServiceImpl implements KeySecretAppService {
 
         if (isCustom) {
             String algo = dto.getAlgorithm() != null ? dto.getAlgorithm().toUpperCase() : "-";
-            if ("RSA".equals(algo) || "SM2".equals(algo)) {
+            if (CryptoAlgorithmEnum.RSA.getCode().equals(algo) || CryptoAlgorithmEnum.SM2.getCode().equals(algo)) {
                 if (dto.getPrivateKey() == null || dto.getPrivateKey().trim().isEmpty()) {
-                    throw new DataSecurityException("KEY_VALUE_EMPTY", "自定义非对称密钥时私钥不能为空");
+                    throw new DataSecurityException(DataSecurityErrorCode.KEY_VALUE_EMPTY, "自定义非对称密钥时私钥不能为空");
                 }
                 rawSecretKey = dto.getPrivateKey().trim();
                 publicKey = (dto.getPublicKey() != null) ? dto.getPublicKey().trim() : null;
             } else {
                 if (dto.getCustomKeyValue() == null || dto.getCustomKeyValue().trim().isEmpty()) {
-                    throw new DataSecurityException("KEY_VALUE_EMPTY", "自定义密钥值不能为空");
+                    throw new DataSecurityException(DataSecurityErrorCode.KEY_VALUE_EMPTY, "自定义密钥值不能为空");
                 }
                 rawSecretKey = dto.getCustomKeyValue().trim();
             }
@@ -90,7 +94,7 @@ public class KeySecretAppServiceImpl implements KeySecretAppService {
     @Transactional(rollbackFor = Exception.class)
     public void updateKey(Long id, KeySecretUpdateDTO dto) {
         KeySecret key = keySecretGateway.findById(id)
-                .orElseThrow(() -> new DataSecurityException("KEY_NOT_FOUND", "密钥不存在: " + id));
+                .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.KEY_NOT_FOUND, "密钥不存在: " + id));
 
         if (dto.getDescription() != null) {
             key.setDescription(dto.getDescription());
@@ -113,7 +117,7 @@ public class KeySecretAppServiceImpl implements KeySecretAppService {
 
         if ("CUSTOM".equalsIgnoreCase(dto.getGenType())) {
             String algo = key.getAlgorithm() != null ? key.getAlgorithm().toUpperCase() : "-";
-            if ("RSA".equals(algo) || "SM2".equals(algo)) {
+            if (CryptoAlgorithmEnum.RSA.getCode().equals(algo) || CryptoAlgorithmEnum.SM2.getCode().equals(algo)) {
                 if (dto.getPrivateKey() != null && !dto.getPrivateKey().trim().isEmpty()) {
                     key.setEncryptedKeyValue(cryptoEngine.encryptUnderMasterKey(dto.getPrivateKey().trim()));
                 }
@@ -132,7 +136,7 @@ public class KeySecretAppServiceImpl implements KeySecretAppService {
     @Transactional(rollbackFor = Exception.class)
     public void transferOwner(Long id, String newOwner) {
         KeySecret key = keySecretGateway.findById(id)
-                .orElseThrow(() -> new DataSecurityException("KEY_NOT_FOUND", "密钥不存在: " + id));
+                .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.KEY_NOT_FOUND, "密钥不存在: " + id));
         key.setOwner(newOwner);
         keySecretGateway.update(key);
     }
@@ -140,11 +144,11 @@ public class KeySecretAppServiceImpl implements KeySecretAppService {
     @Override
     public String revealKeyPlaintext(Long id) {
         KeySecret key = keySecretGateway.findById(id)
-                .orElseThrow(() -> new DataSecurityException("KEY_NOT_FOUND", "密钥不存在: " + id));
+                .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.KEY_NOT_FOUND, "密钥不存在: " + id));
 
         // 记录高危安全审计日志 (AUDIT_KEY_VIEW)
-        log.warn("[HIGH_RISK_AUDIT] AUDIT_KEY_VIEW: User [admin] accessed plaintext key [{}] (ID: {}, Type: {}, Algorithm: {})",
-                key.getKeyName(), key.getId(), key.getKeyType(), key.getAlgorithm());
+        log.warn("[HIGH_RISK_AUDIT] AUDIT_KEY_VIEW: User [{}] accessed plaintext key [{}] (ID: {}, Type: {}, Algorithm: {})",
+                DataSecurityConstants.DEFAULT_OPERATOR, key.getKeyName(), key.getId(), key.getKeyType(), key.getAlgorithm());
 
         String decrypted = cryptoEngine.decryptUnderMasterKey(key.getEncryptedKeyValue());
         if (key.getPublicKeyValue() != null && !key.getPublicKeyValue().trim().isEmpty()) {
@@ -157,13 +161,13 @@ public class KeySecretAppServiceImpl implements KeySecretAppService {
     @Transactional(rollbackFor = Exception.class)
     public void deleteKey(Long id) {
         KeySecret key = keySecretGateway.findById(id)
-                .orElseThrow(() -> new DataSecurityException("KEY_NOT_FOUND", "密钥不存在: " + id));
+                .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.KEY_NOT_FOUND, "密钥不存在: " + id));
 
         List<KeyReference> refs = keySecretGateway.listReferences(id);
         List<KeyTaskReference> taskRefs = keySecretGateway.listTaskReferences(id);
         int totalRefs = (refs != null ? refs.size() : 0) + (taskRefs != null ? taskRefs.size() : 0);
         if (totalRefs > 0) {
-            throw new DataSecurityException("KEY_IN_USE",
+            throw new DataSecurityException(DataSecurityErrorCode.KEY_IN_USE,
                     "密钥 [" + key.getKeyName() + "] 当前正被 " + totalRefs + " 个脱敏规则或数据任务引用，禁止删除！");
         }
 
@@ -192,7 +196,7 @@ public class KeySecretAppServiceImpl implements KeySecretAppService {
     @Transactional(rollbackFor = Exception.class)
     public Long grantPermission(Long id, KeyPermissionDTO dto) {
         keySecretGateway.findById(id)
-                .orElseThrow(() -> new DataSecurityException("KEY_NOT_FOUND", "密钥不存在: " + id));
+                .orElseThrow(() -> new DataSecurityException(DataSecurityErrorCode.KEY_NOT_FOUND, "密钥不存在: " + id));
 
         KeyPermission permission = KeyPermission.builder()
                 .keyId(id)
@@ -200,7 +204,7 @@ public class KeySecretAppServiceImpl implements KeySecretAppService {
                 .granteeId(dto.getGranteeId())
                 .granteeName(dto.getGranteeName())
                 .permissionType(dto.getPermissionType())
-                .grantedBy("admin")
+                .grantedBy(DataSecurityConstants.DEFAULT_OPERATOR)
                 .build();
 
         KeyPermission saved = keySecretGateway.savePermission(permission);

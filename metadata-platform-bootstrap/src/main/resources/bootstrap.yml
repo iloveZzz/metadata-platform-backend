@@ -41,7 +41,7 @@ mybatis-plus:
 # YSS MyBatis 基线
 yss:
   mybatis:
-    mapper-scan: com.yss.metadata.repository,com.yss.datamiddle.semantic.infrastructure.repository.mapper,com.yss.datamiddle.dqinsight.repository,com.yss.datamiddle.aicontextlayer.repository,com.yss.datamiddle.smartgovernance.infrastructure.repository.mapper,com.yss.datasecurity.repository.mapper,com.yss.smartdiscovery.infrastructure.persistence
+    mapper-scan: com.yss.metadata.repository,com.yss.datamiddle.semantic.infrastructure.repository.mapper,com.yss.datamiddle.aicontextlayer.repository,com.yss.datamiddle.smartgovernance.infrastructure.repository.mapper,com.yss.datasecurity.repository.mapper,com.yss.smartdiscovery.infrastructure.persistence
     mapper-location: classpath*:mapper/*.xml
     page-helper:
       enabled: false
@@ -54,21 +54,6 @@ yss:
     threads: ${DB_SCHEDULER_THREADS:10}
     table-name: ${DB_SCHEDULER_TABLE_NAME:scheduled_tasks}
     zone-id: ${DB_SCHEDULER_ZONE_ID:Asia/Shanghai}
-
-
-# DQ Insight 配置
-dq:
-  security:
-    channel-auth:
-      enabled: ${CHANNEL_AUTH_ENABLED:true}
-  catalog-api:
-    base-url: ${CATALOG_API_BASE_URL:http://localhost:8080}
-  expiry:
-    scheduler:
-      interval-ms: ${DQ_EXPIRY_SCHEDULER_INTERVAL_MS:3600000}
-  rbac:
-    visible-domains: ${DQ_RBAC_VISIBLE_DOMAINS:}
-    deny-capabilities: ${DQ_RBAC_DENY_CAPABILITIES:}
 
 # AI Context Layer 凭据密钥配置
 acl:
